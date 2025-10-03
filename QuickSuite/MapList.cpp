@@ -85,5 +85,5 @@ std::vector<TrainingEntry> RLTraining = {
 };
 
 std::vector<WorkshopEntry> RLWorkshop = {
-    //{ "C:\\Program Files\\Epic Games\\rocketleague\\TAGame\\CookedPCConsole\\mods\\Dribble_2_Overhaul\\DribbleChallenge2Overhaul.upk", "Dribble Challenge 2 Overhaul" }
+    //{ "C:\\Program Files\\Epic Games\\rocketleague\\TAGame\\CookedPCConsole\\mods\\Dribble_2_Overhaul\\map.upk, mapnae" }
 };

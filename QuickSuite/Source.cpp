@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "QuickSuite.h"
 #include "MapList.h"
+#include <fstream>
+#include <sstream>
 
 void QuickSuite::RenderSettings() {
     ImGui::TextUnformatted("QuickSuite Settings");
@@ -17,7 +19,7 @@ void QuickSuite::RenderSettings() {
     ImGui::Separator();
     ImGui::Spacing();
 
-    // Return to previous mode checkbox
+
     if (ImGui::Checkbox("Reque", &returnToPreviousMode)) {
    
     }
@@ -103,12 +105,26 @@ void QuickSuite::RenderSettings() {
     if (ImGui::Button("Add Training Map")) {
         if (strlen(newMapCode) > 0 && strlen(newMapName) > 0) {
             RLTraining.push_back({ std::string(newMapCode), std::string(newMapName) });
+
+            // Save after adding
+            std::ofstream file("training_maps.txt");
+            if (file.is_open()) {
+                for (const auto& entry : RLTraining) {
+                    file << entry.code << "," << entry.name << "\n";
+                }
+                file.close();
+            }
+
+            // Reset input fields
             newMapCode[0] = '\0';
             newMapName[0] = '\0';
         }
     }
+
+
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("Adds a custom training map to the list.");
     }
+
 }
 

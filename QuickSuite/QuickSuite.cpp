@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <filesystem>
+#include <fstream>
 
 using namespace std;
 using namespace filesystem;
@@ -27,6 +28,33 @@ void QuickSuite::LoadWorkshopMaps() {
     }
 }
 
+void SaveTrainingMaps(std::shared_ptr<CVarManagerWrapper> cvarManager, const std::vector<TrainingEntry>& RLTraining) {
+    std::string serialized;
+    for (const auto& entry : RLTraining) {
+        serialized += entry.code + ":" + entry.name + "|";
+    }
+    cvarManager->getCvar("qs_training_maps").setValue(serialized);
+}
+
+void LoadTrainingMapsFromFile(std::vector<TrainingEntry>& RLTraining) {
+    RLTraining.clear();
+    std::ifstream file("training_maps.txt");
+    if (!file.is_open()) return;
+
+    std::string line;
+    while (std::getline(file, line)) {
+        size_t sep = line.find(',');
+        if (sep != std::string::npos) {
+            RLTraining.push_back({
+                line.substr(0, sep),         
+                line.substr(sep + 1)          
+                });
+        }
+    }
+
+    file.close();
+}
+
 
 void QuickSuite::onLoad()
 {
@@ -37,6 +65,10 @@ void QuickSuite::onLoad()
         .addOnValueChanged([this](string oldValue, CVarWrapper cvar) {
         enabled = cvar.getBoolValue();
             });
+    cvarManager->registerCvar("qs_training_maps", "", "Stored training maps", true, false, 0, false, 0);
+
+    LoadTrainingMapsFromFile(RLTraining);
+
 
     this->LoadHooks();
 }
