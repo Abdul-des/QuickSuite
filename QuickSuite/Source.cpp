@@ -31,7 +31,7 @@ void QuickSuite::RenderSettings() {
 
     // Map type selector
     ImGui::TextUnformatted("Select Map Type:");
-    if (ImGui::RadioButton("Freeplay", !loadTraining && !loadWorkshop)) {
+    if (ImGui::RadioButton("Freeplay", loadFreeplay)) {
         loadTraining = false;
         loadWorkshop = false;
         loadFreeplay = true;
