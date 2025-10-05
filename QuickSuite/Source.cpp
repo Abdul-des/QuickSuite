@@ -13,6 +13,7 @@ void QuickSuite::RenderSettings() {
     enabled = enableCvar.getBoolValue();
     if (ImGui::Checkbox("Enable QuickSuite", &enabled)) {
         enableCvar.setValue(enabled);
+        SaveSettings();
     }
 
     ImGui::Spacing();
@@ -37,18 +38,21 @@ void QuickSuite::RenderSettings() {
         loadTraining = false;
         loadWorkshop = false;
         loadFreeplay = true;
+        SaveSettings();
     }
     ImGui::SameLine();
     if (ImGui::RadioButton("Training", loadTraining)) {
         loadTraining = true;
         loadWorkshop = false;
         loadFreeplay = false;
+        SaveSettings();
     }
     ImGui::SameLine();
     if (ImGui::RadioButton("Workshop", loadWorkshop)) {
         loadWorkshop = true;
         loadTraining = false;
         loadFreeplay = false;
+        SaveSettings();
     }
 
     ImGui::Spacing();
@@ -62,6 +66,7 @@ void QuickSuite::RenderSettings() {
             if (isSelected) ImGui::SetItemDefaultFocus();
         }
         ImGui::EndCombo();
+        SaveSettings();
     }
 
     // Training map combo
@@ -73,6 +78,7 @@ void QuickSuite::RenderSettings() {
             if (isSelected) ImGui::SetItemDefaultFocus();
         }
         ImGui::EndCombo();
+        SaveSettings();
     }
 
     // Workshop map combo
@@ -86,6 +92,7 @@ void QuickSuite::RenderSettings() {
             if (isSelected) ImGui::SetItemDefaultFocus();
         }
         ImGui::EndCombo();
+        SaveSettings();
     }
 
 
@@ -119,6 +126,7 @@ void QuickSuite::RenderSettings() {
             newMapCode[0] = '\0';
             newMapName[0] = '\0';
         }
+        SaveSettings();
     }
 
 

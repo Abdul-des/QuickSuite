@@ -30,6 +30,8 @@ public:
     bool returnToPreviousMode = false;
 
     void LoadWorkshopMaps();
+    void SaveSettings();
+	void LoadSettings();
 
     std::string lastGameMode = "";
 

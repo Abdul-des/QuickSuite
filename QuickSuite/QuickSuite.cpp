@@ -28,6 +28,42 @@ void QuickSuite::LoadWorkshopMaps() {
     }
 }
 
+void QuickSuite::SaveSettings() {
+    std::ofstream file("quicksuite_settings.cfg");
+    if (!file.is_open()) return;
+
+    file << (returnToPreviousMode ? 1 : 0) << "\n";
+    file << (loadFreeplay ? 1 : 0) << " "
+        << (loadTraining ? 1 : 0) << " "
+        << (loadWorkshop ? 1 : 0) << "\n";
+    file << currentIndex << " "
+        << currentTrainingIndex << " "
+        << currentWorkshopIndex << "\n";
+
+    file.close();
+}
+
+void QuickSuite::LoadSettings() {
+    std::ifstream file("quicksuite_settings.cfg");
+    if (!file.is_open()) return;
+
+    int requeue = 0;
+    int freeplay = 0, training = 0, workshop = 0;
+
+    file >> requeue;
+    returnToPreviousMode = requeue;
+
+    file >> freeplay >> training >> workshop;
+    loadFreeplay = freeplay;
+    loadTraining = training;
+    loadWorkshop = workshop;
+
+    file >> currentIndex >> currentTrainingIndex >> currentWorkshopIndex;
+
+    file.close();
+}
+
+
 void SaveTrainingMaps(std::shared_ptr<CVarManagerWrapper> cvarManager, const std::vector<TrainingEntry>& RLTraining) {
     std::string serialized;
     for (const auto& entry : RLTraining) {
@@ -60,6 +96,7 @@ void QuickSuite::onLoad()
 {
     _globalCvarManager = cvarManager;
     LOG("QuickSuite loaded!");
+	LoadSettings();
     LoadWorkshopMaps();
     cvarManager->registerCvar("quicksuite_enabled", "0", "Enable or disable QuickSuite plugin", true, true, 0, true, 1)
         .addOnValueChanged([this](string oldValue, CVarWrapper cvar) {
