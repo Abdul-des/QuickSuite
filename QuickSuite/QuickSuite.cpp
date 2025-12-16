@@ -14,23 +14,13 @@ BAKKESMOD_PLUGIN(QuickSuite, "QuickSuite", plugin_version, PLUGINTYPE_FREEPLAY)
 shared_ptr<CVarManagerWrapper> _globalCvarManager;
 bool quicksuite_enabled = false;
 
-void QuickSuite::LoadWorkshopMaps() {
-    RLWorkshop.clear();
-    string modsFolder = "C:\\Program Files\\Epic Games\\rocketleague\\TAGame\\CookedPCConsole\\mods";
 
-    for (auto& p : filesystem::recursive_directory_iterator(modsFolder)) {
-        if (p.path().extension() == ".upk") {
-            WorkshopEntry entry;
-            entry.filePath = p.path().string();
-            entry.name = p.path().stem().string(); // file name without extension
-            RLWorkshop.push_back(entry);
-        }
-    }
-}
 
 void QuickSuite::SaveSettings() {
     std::ofstream file("quicksuite_settings.cfg");
-    if (!file.is_open()) return;
+    if (!file.is_open()) {
+        return;
+    }    
 
     file << (returnToPreviousMode ? 1 : 0) << "\n";
     file << (loadFreeplay ? 1 : 0) << " "
@@ -45,7 +35,9 @@ void QuickSuite::SaveSettings() {
 
 void QuickSuite::LoadSettings() {
     std::ifstream file("quicksuite_settings.cfg");
-    if (!file.is_open()) return;
+    if (!file.is_open()) {
+        return;
+    }
 
     int requeue = 0;
     int freeplay = 0, training = 0, workshop = 0;
@@ -64,6 +56,26 @@ void QuickSuite::LoadSettings() {
 }
 
 
+void QuickSuite::LoadWorkshopMaps() {
+    RLWorkshop.clear();
+    string modsFolder = "C:\\Program Files\\Epic Games\\rocketleague\\TAGame\\CookedPCConsole\\mods";
+
+    std::ifstream file(modsFolder);
+    if (!file.is_open()) {
+        return;
+    }
+
+    for (auto& p : filesystem::recursive_directory_iterator(modsFolder)) {
+        if (p.path().extension() == ".upk") {
+            WorkshopEntry entry;
+            entry.filePath = p.path().string();
+            entry.name = p.path().stem().string(); // file name without extension
+            RLWorkshop.push_back(entry);
+        }
+    }
+}
+
+
 void SaveTrainingMaps(std::shared_ptr<CVarManagerWrapper> cvarManager, const std::vector<TrainingEntry>& RLTraining) {
     std::string serialized;
     for (const auto& entry : RLTraining) {
@@ -75,7 +87,9 @@ void SaveTrainingMaps(std::shared_ptr<CVarManagerWrapper> cvarManager, const std
 void LoadTrainingMapsFromFile(std::vector<TrainingEntry>& RLTraining) {
     RLTraining.clear();
     std::ifstream file("training_maps.txt");
-    if (!file.is_open()) return;
+    if (!file.is_open()) {
+        return;
+    }
 
     std::string line;
     while (std::getline(file, line)) {
@@ -96,8 +110,7 @@ void QuickSuite::onLoad()
 {
     _globalCvarManager = cvarManager;
     LOG("QuickSuite loaded!");
-	LoadSettings();
-    LoadWorkshopMaps();
+	
     cvarManager->registerCvar("quicksuite_enabled", "0", "Enable or disable QuickSuite plugin", true, true, 0, true, 1)
         .addOnValueChanged([this](string oldValue, CVarWrapper cvar) {
         enabled = cvar.getBoolValue();
@@ -105,6 +118,8 @@ void QuickSuite::onLoad()
     cvarManager->registerCvar("qs_training_maps", "", "Stored training maps", true, false, 0, false, 0);
 
     LoadTrainingMapsFromFile(RLTraining);
+    LoadSettings();
+    LoadWorkshopMaps();
 
 
     this->LoadHooks();
