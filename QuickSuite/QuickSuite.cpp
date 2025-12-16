@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <fstream>
 
+
 using namespace std;
 using namespace filesystem;
 
@@ -39,11 +40,13 @@ void QuickSuite::LoadSettings() {
         return;
     }
 
+    int wonGame = 0;
     int requeue = 0;
     int freeplay = 0, training = 0, workshop = 0;
 
     file >> requeue;
     returnToPreviousMode = requeue;
+    stayInLobby = wonGame;
 
     file >> freeplay >> training >> workshop;
     loadFreeplay = freeplay;
@@ -55,25 +58,26 @@ void QuickSuite::LoadSettings() {
     file.close();
 }
 
-
-void QuickSuite::LoadWorkshopMaps() {
+void LoadWorkshopMaps(std::vector<WorkshopEntry>& RLWorkshop) {
     RLWorkshop.clear();
-    string modsFolder = "C:\\Program Files\\Epic Games\\rocketleague\\TAGame\\CookedPCConsole\\mods";
 
-    std::ifstream file(modsFolder);
-    if (!file.is_open()) {
+    std::filesystem::path modsFolder = "C:\\Program Files\\Epic Games\\rocketleague\\TAGame\\CookedPCConsole\\mods";
+
+    if (!std::filesystem::exists(modsFolder) || !std::filesystem::is_directory(modsFolder)) {
+        LOG("Mods folder not found");
         return;
     }
 
-    for (auto& p : filesystem::recursive_directory_iterator(modsFolder)) {
-        if (p.path().extension() == ".upk") {
+    for (const auto& p : std::filesystem::recursive_directory_iterator(modsFolder)) {
+        if (p.is_regular_file() && p.path().extension() == ".upk") {
             WorkshopEntry entry;
             entry.filePath = p.path().string();
-            entry.name = p.path().stem().string(); // file name without extension
+            entry.name = p.path().stem().string();
             RLWorkshop.push_back(entry);
         }
     }
 }
+
 
 
 void SaveTrainingMaps(std::shared_ptr<CVarManagerWrapper> cvarManager, const std::vector<TrainingEntry>& RLTraining) {
@@ -117,10 +121,9 @@ void QuickSuite::onLoad()
             });
     cvarManager->registerCvar("qs_training_maps", "", "Stored training maps", true, false, 0, false, 0);
 
+    LoadWorkshopMaps(RLWorkshop);
     LoadTrainingMapsFromFile(RLTraining);
     LoadSettings();
-    LoadWorkshopMaps();
-
 
     this->LoadHooks();
 }
@@ -134,45 +137,88 @@ void QuickSuite::onUnload()
 
 void QuickSuite::LoadHooks()
 {
-	gameWrapper->HookEvent("Function TAGame.GameEvent_Soccar_TA.EventMatchEnded", bind(&QuickSuite::GameEndedEvent, this, placeholders::_1));
-	gameWrapper->HookEvent("Function TAGame.AchievementManager_TA.HandleMatchEnded", bind(&QuickSuite::GameEndedEvent, this,placeholders::_1));
+    // Fires at end of match
+    gameWrapper->HookEvent("Function TAGame.GameEvent_Soccar_TA.EventMatchEnded",std::bind(&QuickSuite::GameEndedEvent, this, std::placeholders::_1));
+
+    // Detect win via stat ticker 
+    gameWrapper->HookEventWithCallerPost<ServerWrapper>("Function TAGame.GFxHUD_TA.HandleStatTickerMessage",[this](ServerWrapper caller, void* params, std::string eventName) {onStatTickerMessage(params);});
+
+    // Reset flags at start of the next match
+    gameWrapper->HookEvent(
+        "Function TAGame.GameEvent_Soccar_TA.EventMatchStarted",[this](std::string) {
+            skipPostMatchLoads = false;
+            gameWon = false;
+        }
+    );
 }
 
-void QuickSuite::GameEndedEvent(string name)
+
+
+void QuickSuite::onStatTickerMessage(void* params)
+{
+    StatTickerParams* pStruct = (StatTickerParams*)params;
+
+    StatEventWrapper statEvent = StatEventWrapper(pStruct->StatEvent);
+    PriWrapper receiver = PriWrapper(pStruct->Receiver);
+
+    PlayerControllerWrapper pc = gameWrapper->GetPlayerController();
+    if (pc.IsNull()) return;
+
+    PriWrapper localPRI = pc.GetPRI();
+    if (localPRI.IsNull()) return;
+
+    // Only react if the stat is for *you*
+    if (statEvent.GetEventName() == "Win" && receiver.GetUniqueIdWrapper() == localPRI.GetUniqueIdWrapper())
+    {
+        LOG("PLAYER WON skipping post match loads");
+        gameWon = true;
+        skipPostMatchLoads = true;
+    }
+}
+
+
+void QuickSuite::GameEndedEvent(std::string name)
 {
     if (!enabled) return;
 
-    // Load Training
+    // Absolute guard — works even if this fires multiple times
+    if (stayInLobby && skipPostMatchLoads) {
+        LOG("Skipping all post-match loads, staying in lobby");
+
+        // Optional requeue
+        if (returnToPreviousMode) {
+            cvarManager->executeCommand("queue");
+        }
+
+        return;
+    }
+
+    // ---------- NORMAL FLOW ----------
+
     if (loadTraining && !RLTraining.empty()) {
-        cvarManager->executeCommand("load_training " + RLTraining[currentTrainingIndex].code);
-        LOG("Loading training map: " + RLTraining[currentTrainingIndex].name);
-    }
-    else {
-        LOG("No Training Maps Detected");
+        cvarManager->executeCommand(
+            "load_training " + RLTraining[currentTrainingIndex].code
+        );
     }
 
-    // Load Workshop
     if (loadWorkshop && !RLWorkshop.empty()) {
-        cvarManager->executeCommand("load_workshop \"" + RLWorkshop[currentWorkshopIndex].filePath+ "\"");
-        LOG("Loading workshop map: " + RLWorkshop[currentWorkshopIndex].name);
-    }
-    else {
-        LOG("No Training Maps Detected");
+        cvarManager->executeCommand(
+            "load_workshop \"" + RLWorkshop[currentWorkshopIndex].filePath + "\""
+        );
     }
 
-    // Load Freeplay
-
-    if(loadFreeplay) {
-        cvarManager->executeCommand("load_freeplay " + RLMaps[currentIndex].code);
-        LOG("Loading freeplay map: " + RLMaps[currentIndex].name);
+    if (loadFreeplay) {
+        cvarManager->executeCommand(
+            "load_freeplay " + RLMaps[currentIndex].code
+        );
     }
 
-    // ReQueue
     if (returnToPreviousMode) {
         cvarManager->executeCommand("queue");
-        LOG("Re-queueing into previous playlist.");
     }
 }
+
+
 
 
 

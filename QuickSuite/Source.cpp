@@ -25,7 +25,15 @@ void QuickSuite::RenderSettings() {
    
     }
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("If checked, after loading a Freeplay/Training/Workshop map, you'll be queued back into the mode you were in before.");
+        ImGui::SetTooltip("After loading a Freeplay/Training/Workshop map, you'll be queued back into the mode you were in before.");
+    }
+
+
+    if (ImGui::Checkbox("Win = Stay in Lobby", &stayInLobby)) {
+
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("After winning a game, it keeps you in the lobby, allowing you to team up with you team mate");
     }
 
     ImGui::Spacing();
