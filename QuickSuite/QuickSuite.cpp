@@ -145,7 +145,8 @@ void QuickSuite::LoadHooks()
 
     // Reset flags at start of the next match
     gameWrapper->HookEvent(
-        "Function TAGame.GameEvent_Soccar_TA.EventMatchStarted",[this](std::string) {
+        "Function TAGame.GFxHUD_Soccar_TA.HandleReadyToStartGame",[this](std::string) {
+            LOG("new match is about to start!");
             skipPostMatchLoads = false;
             gameWon = false;
         }
@@ -167,10 +168,9 @@ void QuickSuite::onStatTickerMessage(void* params)
     PriWrapper localPRI = pc.GetPRI();
     if (localPRI.IsNull()) return;
 
-    // Only react if the stat is for *you*
     if (statEvent.GetEventName() == "Win" && receiver.GetUniqueIdWrapper() == localPRI.GetUniqueIdWrapper())
     {
-        LOG("PLAYER WON skipping post match loads");
+        LOG("PLAYER WON");
         gameWon = true;
         skipPostMatchLoads = true;
     }
@@ -181,8 +181,7 @@ void QuickSuite::GameEndedEvent(std::string name)
 {
     if (!enabled) return;
 
-    // Absolute guard — works even if this fires multiple times
-    if (stayInLobby && skipPostMatchLoads) {
+    if (stayInLobby && skipPostMatchLoads && gameWon) {
         LOG("Skipping all post-match loads, staying in lobby");
 
         // Optional requeue
@@ -191,28 +190,21 @@ void QuickSuite::GameEndedEvent(std::string name)
         }
 
         return;
-    }
-
-    // ---------- NORMAL FLOW ----------
-
+    }   
+   
     if (loadTraining && !RLTraining.empty()) {
         cvarManager->executeCommand(
-            "load_training " + RLTraining[currentTrainingIndex].code
-        );
+            "load_training " + RLTraining[currentTrainingIndex].code);
     }
-
+    
     if (loadWorkshop && !RLWorkshop.empty()) {
-        cvarManager->executeCommand(
-            "load_workshop \"" + RLWorkshop[currentWorkshopIndex].filePath + "\""
-        );
+        cvarManager->executeCommand("load_workshop \"" + RLWorkshop[currentWorkshopIndex].filePath + "\"");
     }
-
+    
     if (loadFreeplay) {
-        cvarManager->executeCommand(
-            "load_freeplay " + RLMaps[currentIndex].code
-        );
+        cvarManager->executeCommand("load_freeplay " + RLMaps[currentIndex].code);
     }
-
+    
     if (returnToPreviousMode) {
         cvarManager->executeCommand("queue");
     }
