@@ -21,9 +21,10 @@ void QuickSuite::SaveSettings() {
     std::ofstream file("quicksuite_settings.cfg");
     if (!file.is_open()) {
         return;
-    }    
+    }
 
     file << (returnToPreviousMode ? 1 : 0) << "\n";
+    file << (stayInLobby ? 1 : 0) << "\n";
     file << (loadFreeplay ? 1 : 0) << " "
         << (loadTraining ? 1 : 0) << " "
         << (loadWorkshop ? 1 : 0) << "\n";
@@ -46,6 +47,7 @@ void QuickSuite::LoadSettings() {
 
     file >> requeue;
     returnToPreviousMode = requeue;
+    file >> wonGame;
     stayInLobby = wonGame;
 
     file >> freeplay >> training >> workshop;

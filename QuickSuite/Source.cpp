@@ -30,7 +30,7 @@ void QuickSuite::RenderSettings() {
 
 
     if (ImGui::Checkbox("Win = Stay in Lobby", &stayInLobby)) {
-
+      
     }
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("After winning a game, it keeps you in the lobby, allowing you to team up with you team mate");
