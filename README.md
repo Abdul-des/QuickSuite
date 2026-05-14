@@ -1,4 +1,5 @@
 # QuickSuite
+https://bakkesplugins.com/plugin/620
 QuickSuite is a BakkesMod plugin that allows users to automatically requeue or join a map of their choice.  
 This plugin was heavily inspired by existing plugins (Instant Suite and Auto Leave).
 
